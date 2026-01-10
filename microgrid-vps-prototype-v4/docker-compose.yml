@@ -1,0 +1,49 @@
+version: '3.9'
+services:
+  cloud-api:
+    build:
+      context: ./cloud
+    ports:
+      - "8080:8080"
+    environment:
+      PYTHONUNBUFFERED: 1
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]
+
+  edge-1:
+    build:
+      context: ./edge
+    environment:
+      EDGE_ID: edge-1
+      CLOUD_URL: http://cloud-api:8080
+      EDGE_TOKEN: ${EDGE1_TOKEN:-}
+    depends_on:
+      - cloud-api
+    ports:
+      - "8081:8080"
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]
+
+  edge-2:
+    build:
+      context: ./edge
+    environment:
+      EDGE_ID: edge-2
+      CLOUD_URL: http://cloud-api:8080
+      EDGE_TOKEN: ${EDGE2_TOKEN:-}
+    depends_on:
+      - cloud-api
+    ports:
+      - "8082:8080"
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]
+
+  edge-3:
+    build:
+      context: ./edge
+    environment:
+      EDGE_ID: edge-3
+      CLOUD_URL: http://cloud-api:8080
+      EDGE_TOKEN: ${EDGE3_TOKEN:-}
+    depends_on:
+      - cloud-api
+    ports:
+      - "8083:8080"
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]

@@ -1,0 +1,12 @@
+version: '3.9'
+services:
+  edge:
+    build:
+      context: ./edge
+    environment:
+      EDGE_ID: ${EDGE_ID:-edge-1}
+      CLOUD_URL: ${CLOUD_URL:-http://localhost:8080}
+      EDGE_TOKEN: ${EDGE_TOKEN:-}
+    ports:
+      - "${EDGE_PORT:-8081}:8080"
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]

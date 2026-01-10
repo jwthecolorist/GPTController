@@ -1,0 +1,124 @@
+---
+# Deploy the edge stack onto a remote device over SSH.
+#
+# This playbook assumes the target host is reachable over SSH and that you
+# have either configured passwordless sudo or are supplying the password when
+# prompted.  It will install Docker and Docker Compose, copy the edge
+# controller files and spin up the services using the provided environment
+# variables.
+#
+# Variables you must provide when invoking this playbook:
+#
+# * `edge_id`:         a unique identifier for the edge controller
+# * `site_id`:         the site this edge belongs to (for your own reference)
+# * `cloud_url`:       the base URL of the cloud API (e.g. https://api.example.com)
+# * `edge_token`:      the enrollment token issued by the cloud
+#
+# Example invocation:
+# ansible-playbook -i inventory.ini edge_deploy.yml \
+#   -e edge_id=edge01 \
+#   -e site_id=site123 \
+#   -e cloud_url=https://api.yourdomain.com \
+#   -e edge_token=<token>
+
+- hosts: all
+  become: yes
+  vars:
+    # Directory on the remote host where the edge stack will live
+    edge_dir: /opt/microgrid-edge
+  tasks:
+    - name: Install prerequisites
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg-agent
+          - software-properties-common
+        state: present
+        update_cache: yes
+
+    - name: Add Docker’s official GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker apt repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+        state: present
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: Ensure the edge directory exists
+      file:
+        path: "{{ edge_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy edge code
+      copy:
+        src: ../edge/
+        dest: "{{ edge_dir }}/edge"
+        owner: root
+        group: root
+        mode: '0755'
+      delegate_to: localhost
+
+    - name: Copy docker compose file
+      copy:
+        src: ../docker-compose.edge.yml
+        dest: "{{ edge_dir }}/docker-compose.yml"
+        owner: root
+        group: root
+        mode: '0644'
+      delegate_to: localhost
+
+    - name: Create environment file
+      copy:
+        dest: "{{ edge_dir }}/.env"
+        content: |
+          EDGE_ID={{ edge_id }}
+          CLOUD_URL={{ cloud_url }}
+          EDGE_TOKEN={{ edge_token }}
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Start edge services
+      community.docker.docker_compose:
+        project_src: "{{ edge_dir }}"
+        pull: yes
+        build: yes
+
+    # Example of how you might upload firmware and apply it.
+    # This is commented out by default because overwriting firmware on a
+    # Cerbo GX or BeagleBone is dangerous.  If you choose to enable it,
+    # supply the `firmware_image` variable and remove the comments.
+    #- name: Upload firmware image
+    #  copy:
+    #    src: ../firmware/{{ firmware_image }}
+    #    dest: /tmp/{{ firmware_image }}
+    #    mode: '0644'
+    #  when: firmware_image is defined
+
+    #- name: Apply firmware update
+    #  shell: |
+    #    flash_tool --image /tmp/{{ firmware_image }} --apply
+    #  when: firmware_image is defined
+    #  notify:
+    #    - Reboot device
+
+  handlers:
+    - name: Reboot device
+      reboot:
+        msg: "Rebooting after firmware update"

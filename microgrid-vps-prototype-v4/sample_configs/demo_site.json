@@ -1,0 +1,19 @@
+{
+  "name": "Demo Site",
+  "pcc_max_export_kw": 0,
+  "pv": {
+    "inverters": [
+      {"name": "PV1", "max_kw": 5}
+    ]
+  },
+  "bess": {
+    "pcs": {
+      "max_kw_charge": 5,
+      "max_kw_discharge": 5
+    },
+    "soc_limit": {
+      "min": 20,
+      "max": 80
+    }
+  }
+}

@@ -1,0 +1,10 @@
+version: '3.9'
+services:
+  cloud-api:
+    build:
+      context: ./cloud
+    ports:
+      - "8080:8080"
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]

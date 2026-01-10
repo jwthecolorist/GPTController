@@ -1,0 +1,12 @@
+[edge_devices]
+# Example inventory file for the edge_deploy playbook.
+# Replace the IP or hostnames below with your target devices.  You can
+# specify multiple hosts separated by newlines.  When running the
+# playbook, use `-i deploy/inventory.ini.example` or copy this file to
+# `inventory.ini` and edit as needed.
+#
+# A typical entry looks like:
+# 192.0.2.10 ansible_user=admin ansible_password=secret
+# my-cerbo.local ansible_user=root ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+192.0.2.10 ansible_user=root
